@@ -47,7 +47,7 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-green-500/20 mb-6">
             <Store size={40} className="text-green-500" />
           </div>
-          <h1 className="text-4xl font-black text-slate-100 tracking-tight">FestaPDV</h1>
+          <h1 className="text-4xl font-black text-slate-100 tracking-tight">Barraca do João</h1>
           <p className="text-slate-400 mt-2">Sistema Rápido de Vendas</p>
         </div>
 

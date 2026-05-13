@@ -5,7 +5,7 @@ import { Cart } from '@/components/Cart';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { useState } from 'react';
 import { Product } from '@prisma/client';
-import { LogOut } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function VendasClient({ initialProducts }: { initialProducts: Product[] }) {
@@ -23,13 +23,23 @@ export default function VendasClient({ initialProducts }: { initialProducts: Pro
       {/* Area de Produtos */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-100">FestaPDV</h1>
-          <button 
-            onClick={() => router.push('/')}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 active:bg-slate-600 rounded-xl text-slate-300 transition-colors"
-          >
-            <LogOut size={18} />
-          </button>
+          <h1 className="text-xl font-bold text-slate-100">Barraca do João</h1>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => router.push('/admin')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-blue-600 active:bg-blue-700 rounded-xl text-slate-300 hover:text-white transition-all"
+              title="Gerenciar Produtos"
+            >
+              <Settings size={18} />
+              <span className="hidden sm:inline">Gerenciar</span>
+            </button>
+            <button 
+              onClick={() => router.push('/')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-red-600 active:bg-red-700 rounded-xl text-slate-300 hover:text-white transition-all"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </header>
 
         <CategoryTabs 
@@ -38,13 +48,13 @@ export default function VendasClient({ initialProducts }: { initialProducts: Pro
           onSelectCategory={setActiveCategory}
         />
 
-        <main className="flex-1 overflow-y-auto pb-24 md:pb-4">
+        <main className="flex-1 overflow-y-auto p-4">
           <ProductGrid products={filteredProducts} />
         </main>
       </div>
 
-      {/* Barra de Carrinho para Celular (Fixa embaixo) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 p-4 bg-slate-900 border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+      {/* Barra de Carrinho para Celular (Fixa no rodape, sem tampar nada) */}
+      <div className="md:hidden p-4 bg-slate-900 border-t border-slate-800 shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
         <Cart isMobile />
       </div>
 

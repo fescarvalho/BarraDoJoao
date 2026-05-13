@@ -54,7 +54,7 @@ async function printOrder(payload) {
     printer.bold(true);
     printer.println("BARRACA DO JOAO");
     printer.bold(false);
-    printer.println("FestaPDV - Comanda de Venda");
+    printer.println("Barraca do João - Comanda de Venda");
     printer.drawLine();
     printer.alignLeft();
     printer.println(`Pedido: ${payload.orderId.substring(0, 8).toUpperCase()}`);

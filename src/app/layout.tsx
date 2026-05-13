@@ -14,13 +14,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "FestaPDV",
+  title: "Barraca do João",
   description: "Sistema PDV Ultra-Veloz para Eventos",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "FestaPDV",
+    title: "Barraca do João",
   },
 };
 
@@ -31,7 +31,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className="dark">
-      <body className={`${inter.className} bg-slate-950 text-slate-50 antialiased h-screen overflow-hidden`}>
+      <body className={`${inter.className} bg-slate-950 text-slate-50 antialiased`}>
         <CartProvider>
           {children}
         </CartProvider>

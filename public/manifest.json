@@ -1,6 +1,6 @@
 {
-  "name": "FestaPDV",
-  "short_name": "FestaPDV",
+  "name": "Barraca do João",
+  "short_name": "Barraca do João",
   "description": "Sistema PDV Ultra-Veloz para Eventos",
   "start_url": "/",
   "display": "standalone",

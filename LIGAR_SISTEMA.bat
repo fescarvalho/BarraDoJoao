@@ -1,7 +1,7 @@
 @echo off
-title FestaPDV - Sistema
+title Barraca do João - Sistema
 echo ======================================================
-echo           FESTAPDV - SISTEMA LIGADO
+echo           BARRACA DO JOÃO - SISTEMA LIGADO
 echo ======================================================
 echo.
 
