@@ -1,26 +1,22 @@
 require('dotenv').config();
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 const ThermalPrinter = require("node-thermal-printer").printer;
 const PrinterTypes = require("node-thermal-printer").types;
 const { exec } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY;
+const databaseUrl = process.env.DATABASE_URL;
 const printerInterface = process.env.PRINTER_INTERFACE || 'FestaPrinter';
 
-console.log("--- CONFIGURAÇÃO ---");
-console.log("URL:", supabaseUrl);
-console.log("Interface Impressora:", printerInterface);
-console.log("--------------------");
+console.log("--- CONFIGURAÇÃO OFFLINE (FIX FINAL) ---");
 
-if (!supabaseUrl || !supabaseServiceKey || supabaseServiceKey.includes("SUA_SERVICE_ROLE_KEY")) {
-  console.error("ERRO: SUPABASE_URL ou SUPABASE_SERVICE_KEY não configurados corretamente no print-server/.env");
+if (!databaseUrl) {
+  console.error("ERRO: DATABASE_URL não encontrada.");
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const pool = new Pool({ connectionString: databaseUrl });
 
 let printer = new ThermalPrinter({
   type: PrinterTypes.EPSON,
@@ -39,11 +35,10 @@ async function sendToWindowsPrinter(buffer) {
     const tempFile = path.join(__dirname, 'temp_print.bin');
     fs.writeFileSync(tempFile, buffer);
     const command = `copy /b "${tempFile}" "\\\\localhost\\${printerInterface}"`;
-    
     exec(command, (error, stdout, stderr) => {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
       if (error) {
-        console.error("ERRO DE IMPRESSÃO (Certifique-se que a impressora está compartilhada):", stderr);
+        console.error("ERRO DE IMPRESSÃO:", stderr);
         resolve(false);
       } else {
         resolve(true);
@@ -64,7 +59,7 @@ async function printOrder(payload) {
     printer.alignLeft();
     printer.println(`Pedido: ${payload.orderId.substring(0, 8).toUpperCase()}`);
     printer.println(`Data: ${new Date(payload.timestamp).toLocaleString('pt-BR')}`);
-    printer.println(`Vendedor: ${payload.seller}`);
+    printer.println(`Vendedor: ${payload.seller || 'Caixa'}`);
     printer.drawLine();
     
     for (const item of payload.items) {
@@ -97,39 +92,37 @@ async function printOrder(payload) {
       }
     }
 
-    const success = await sendToWindowsPrinter(printer.getBuffer());
-    if (success) console.log(`Sucesso ao imprimir pedido ${payload.orderId}`);
-    return success;
+    return await sendToWindowsPrinter(printer.getBuffer());
   } catch (error) {
-    console.error("Erro no processamento da impressão:", error);
+    console.error("Erro no processamento:", error);
     return false;
   }
 }
 
 async function markPrintJobDone(id, status) {
-  await supabase.from('print_queue').update({ status, updatedAt: new Date().toISOString() }).eq('id', id);
+  // Coluna "updatedAt" exige aspas duplas por causa da letra maiuscula
+  await pool.query('UPDATE print_queue SET status = $1, "updatedAt" = NOW() WHERE id = $2', [status, id]);
 }
 
-const channel = supabase.channel('print-jobs')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'print_queue' }, async (payload) => {
-    console.log('--- NOVO PEDIDO RECEBIDO ---');
-    await markPrintJobDone(payload.new.id, 'PRINTING');
-    const success = await printOrder(payload.new.payload);
-    await markPrintJobDone(payload.new.id, success ? 'DONE' : 'ERROR');
-  })
-  .subscribe((status, error) => {
-    if (status === 'SUBSCRIBED') {
-      console.log('✅ Conectado ao Supabase! Aguardando novas vendas...');
-    } else if (status === 'CHANNEL_ERROR') {
-      console.error('❌ Erro na conexão Realtime:', error);
-    } else {
-      console.log('Status da Conexão:', status);
+async function checkPendingJobs() {
+  try {
+    // Tabela print_queue e coluna "createdAt" com aspas
+    const res = await pool.query('SELECT * FROM print_queue WHERE status = \'PENDING\' ORDER BY "createdAt" ASC');
+    const data = res.rows;
+
+    if (data && data.length > 0) {
+      console.log(`[Offline] Processando ${data.length} pedidos...`);
+      for (const job of data) {
+        await markPrintJobDone(job.id, 'PRINTING');
+        const payload = typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+        const success = await printOrder(payload);
+        await markPrintJobDone(job.id, success ? 'DONE' : 'ERROR');
+      }
     }
-  });
+  } catch (error) {
+    console.error("Erro na busca do banco:", error.message);
+  }
+}
 
-// Keep process alive
-setInterval(() => {}, 1000 * 60 * 60);
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+console.log('✅ Impressora Offline Pronta!');
+setInterval(checkPendingJobs, 1000);

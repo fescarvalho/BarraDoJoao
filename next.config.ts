@@ -4,6 +4,8 @@ import withPWA from "next-pwa";
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  // Liberando enderecos locais comuns para evitar travamentos no celular
+  allowedDevOrigins: ['localhost', '127.0.0.1', '54.232.189.113', '192.168.1.133'],
   /* config options here */
 };
 

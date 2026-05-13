@@ -21,7 +21,18 @@ export default function LoginPage() {
 
   const handleNumberClick = (num: string) => {
     if (pin.length < 4) {
-      setPin(prev => prev + num);
+      const newPin = pin + num;
+      setPin(newPin);
+      if (newPin.length === 4) {
+        // Auto-login ao chegar em 4 digitos
+        if (newPin === '1234') {
+          console.log("PIN correto, redirecionando...");
+          router.push('/vendas');
+        } else {
+          alert('PIN incorreto!');
+          setPin('');
+        }
+      }
     }
   };
 
