@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  GARCOM
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+enum OrderType {
+  DINHEIRO
+  PIX
+  CARTAO
+}
+
+enum PrintStatus {
+  PENDING
+  PRINTING
+  DONE
+  ERROR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  role      Role     @default(GARCOM)
+  pin       String   // PIN 4 dígitos para login rápido
+  orders    Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Product {
+  id        String      @id @default(cuid())
+  name      String
+  price     Int         // centavos (R$ 10,00 = 1000)
+  category  String
+  active    Boolean     @default(true)
+  orderItems OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("products")
+}
+
+model Order {
+  id         String      @id @default(cuid())
+  sellerId   String
+  seller     User        @relation(fields: [sellerId], references: [id])
+  total      Int         // centavos
+  status     OrderStatus @default(PENDING)
+  type       OrderType
+  items      OrderItem[]
+  printJobs  PrintQueue[]
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  unitPrice Int     // centavos — snapshot do preço no momento da venda
+
+  @@map("order_items")
+}
+
+model PrintQueue {
+  id        String      @id @default(cuid())
+  orderId   String
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status    PrintStatus @default(PENDING)
+  payload   Json        // dados formatados para impressão
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@map("print_queue")
+}
