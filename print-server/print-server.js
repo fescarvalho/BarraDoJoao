@@ -113,12 +113,24 @@ async function checkPendingJobs() {
     if (data && data.length > 0) {
       console.log(`[Offline] Processando ${data.length} pedidos...`);
       for (const job of data) {
-        await markPrintJobDone(job.id, 'PRINTING');
-        const payload = typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
-        const success = await printOrder(payload);
-        await markPrintJobDone(job.id, success ? 'DONE' : 'ERROR');
+        try {
+          await markPrintJobDone(job.id, 'PRINTING');
+          const payload = typeof job.payload === 'string' ? JSON.parse(job.payload) : job.payload;
+          const success = await printOrder(payload);
+          await markPrintJobDone(job.id, success ? 'DONE' : 'ERROR');
+          if (!success) console.warn(`[Aviso] Pedido ${job.id} marcado como ERRO (provavelmente sem impressora)`);
+        } catch (jobError) {
+          console.error(`Erro ao processar job ${job.id}:`, jobError.message);
+          // Tenta marcar como erro para não travar a fila
+          try {
+            await markPrintJobDone(job.id, 'ERROR');
+          } catch (e) {
+            console.error("Falha Crítica: Não conseguiu nem marcar como ERRO no banco.");
+          }
+        }
       }
     }
+
   } catch (error) {
     console.error("Erro na busca do banco:", error.message);
   }

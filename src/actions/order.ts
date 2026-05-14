@@ -23,7 +23,7 @@ export async function createOrder(payload: OrderPayload) {
           sellerId: payload.sellerId,
           total: payload.total,
           type: payload.type,
-          status: 'COMPLETED', // Venda rápida já entra como concluída
+          status: 'COMPLETED',
           items: {
             create: payload.items.map(item => ({
               productId: item.productId,
@@ -42,37 +42,44 @@ export async function createOrder(payload: OrderPayload) {
         }
       });
 
-      // 2. Formatar os dados para impressão (payload JSON)
-      const printPayload = {
-        orderId: order.id,
-        timestamp: order.createdAt.toISOString(),
-        seller: order.seller.name,
-        type: order.type,
-        total: order.total,
-        items: order.items.map(item => ({
-          name: item.product.name,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          totalPrice: item.unitPrice * item.quantity,
-          category: item.product.category
-        }))
-      };
-
-      // 3. Inserir na fila de impressão
-      await tx.printQueue.create({
-        data: {
+      // 2. Tentar enfileirar para impressão, mas não travar o pedido se falhar
+      try {
+        const printPayload = {
           orderId: order.id,
-          payload: printPayload,
-          status: 'PENDING'
-        }
-      });
+          timestamp: order.createdAt.toISOString(),
+          seller: order.seller?.name || 'Caixa',
+          type: order.type,
+          total: order.total,
+          items: order.items.map(item => ({
+            name: item.product.name,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.unitPrice * item.quantity,
+            category: item.product.category
+          }))
+        };
+
+        await tx.printQueue.create({
+          data: {
+            orderId: order.id,
+            payload: printPayload,
+            status: 'PENDING'
+          }
+        });
+      } catch (printError) {
+        console.error('Erro ao enfileirar para impressão (ignorado):', printError);
+      }
 
       return order;
     });
 
     return { success: true, orderId: result.id };
   } catch (error) {
-    console.error('Erro ao criar pedido:', error);
-    return { success: false, error: 'Falha ao processar venda' };
+    console.error('Erro ao criar pedido (CRÍTICO):', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Falha ao processar venda' 
+    };
   }
 }
+
