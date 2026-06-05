@@ -12,15 +12,22 @@ enum Role {
 }
 
 enum OrderStatus {
+  ABERTA
+  FECHADA
+  CANCELLED
   PENDING
   COMPLETED
-  CANCELLED
 }
 
-enum OrderType {
+enum PaymentMethod {
   DINHEIRO
   PIX
   CARTAO
+}
+
+enum OrderType {
+  AVULSO
+  MESA
 }
 
 enum PrintStatus {
@@ -56,16 +63,19 @@ model Product {
 }
 
 model Order {
-  id         String      @id @default(cuid())
-  sellerId   String
-  seller     User        @relation(fields: [sellerId], references: [id])
-  total      Int         // centavos
-  status     OrderStatus @default(PENDING)
-  type       OrderType
-  items      OrderItem[]
-  printJobs  PrintQueue[]
-  createdAt  DateTime    @default(now())
-  updatedAt  DateTime    @updatedAt
+  id            String         @id @default(cuid())
+  sellerId      String
+  seller        User           @relation(fields: [sellerId], references: [id])
+  tableNumber   Int?
+  customerName  String?
+  total         Int            // centavos
+  status        OrderStatus    @default(FECHADA)
+  type          OrderType      @default(AVULSO)
+  paymentMethod PaymentMethod?
+  items         OrderItem[]
+  printJobs     PrintQueue[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@map("orders")
 }

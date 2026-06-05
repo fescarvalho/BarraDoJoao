@@ -2,26 +2,26 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { formatCurrency } from '@/lib/utils';
-import { PaymentMethod } from '@/types';
 import { X, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
 import { createOrder } from '@/actions/order';
 import { OrderSuccess } from './OrderSuccess';
 
-interface CheckoutModalProps {
+interface TableModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
+export function TableModal({ isOpen, onClose }: TableModalProps) {
   const { cart, totalPrice, clearCart } = useCart();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [tableNumber, setTableNumber] = useState('');
 
   if (!isOpen) return null;
 
-  const handleCheckout = () => {
-    if (cart.length === 0) return;
+  const handleLaunchTable = () => {
+    if (cart.length === 0 || !tableNumber) return;
 
     startTransition(async () => {
       try {
@@ -31,8 +31,8 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             quantity: item.quantity,
             unitPrice: item.product.price
           })),
-          type: 'AVULSO',
-          paymentMethod: 'DINHEIRO',
+          type: 'MESA',
+          tableNumber: parseInt(tableNumber),
           total: totalPrice,
           // TODO: Pegar sellerId real do contexto de auth
           sellerId: 'cl_mock_seller_id' 
@@ -43,18 +43,18 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           clearCart();
           setTimeout(() => {
             setShowSuccess(false);
+            setTableNumber('');
             onClose();
           }, 2000);
         } else {
-          alert(`Erro ao finalizar venda: ${result.error}`);
+          alert(`Erro ao lançar na mesa: ${result.error}`);
         }
       } catch (error) {
-        alert('Erro ao finalizar venda. Verifique a conexão com o banco.');
+        alert('Erro ao lançar na mesa. Verifique a conexão com o banco.');
         console.error(error);
       }
     });
   };
-
 
   return (
     <>
@@ -62,7 +62,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
         <div className="bg-slate-900 w-full sm:w-[480px] sm:rounded-3xl rounded-t-3xl border border-slate-800 shadow-2xl p-6 animate-in slide-in-from-bottom-8 duration-300">
           
           <div className="flex justify-between items-center mb-8">
-            <h3 className="text-2xl font-bold text-slate-100">Finalizar Venda</h3>
+            <h3 className="text-2xl font-bold text-slate-100">Lançar na Mesa</h3>
             <button 
               onClick={onClose}
               disabled={isPending}
@@ -72,17 +72,16 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
             </button>
           </div>
 
-          <div className="text-center mb-8 bg-slate-950 rounded-2xl p-6 border border-slate-800">
-            <p className="text-slate-400 mb-1">Total do Pedido</p>
-            <p className="text-5xl font-black text-white tracking-tight">
-              {formatCurrency(totalPrice)}
-            </p>
-          </div>
-
-          <div className="mb-8 text-center">
-            <p className="text-slate-400 text-lg">
-              Deseja confirmar esta venda?
-            </p>
+          <div className="mb-8">
+            <label className="block text-slate-400 mb-2 text-lg">Número da Mesa</label>
+            <input 
+              type="number" 
+              value={tableNumber}
+              onChange={(e) => setTableNumber(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-2xl p-4 text-3xl font-black text-white text-center focus:outline-none focus:border-green-500 transition-colors"
+              placeholder="Ex: 12"
+              autoFocus
+            />
           </div>
 
           <div className="flex gap-4">
@@ -94,9 +93,9 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
               Cancelar
             </button>
             <button
-              onClick={handleCheckout}
-              disabled={isPending}
-              className="flex-[2] bg-green-500 hover:bg-green-600 text-white active:scale-[0.98] transition-all font-bold text-xl py-5 rounded-2xl disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center gap-2 shadow-xl shadow-green-500/20"
+              onClick={handleLaunchTable}
+              disabled={isPending || !tableNumber}
+              className="flex-[2] bg-blue-500 hover:bg-blue-600 text-white active:scale-[0.98] transition-all font-bold text-xl py-5 rounded-2xl disabled:opacity-50 disabled:active:scale-100 flex justify-center items-center gap-2 shadow-xl shadow-blue-500/20"
             >
               {isPending ? (
                 <>
@@ -115,4 +114,3 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
     </>
   );
 }
-

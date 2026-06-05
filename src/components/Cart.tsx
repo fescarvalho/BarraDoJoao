@@ -6,10 +6,12 @@ import { ShoppingCart, Trash2, CreditCard } from 'lucide-react';
 import { CartItem } from './CartItem';
 import { useState } from 'react';
 import { CheckoutModal } from './CheckoutModal';
+import { TableModal } from './TableModal';
 
 export function Cart({ isMobile }: { isMobile?: boolean }) {
   const { cart, totalItems, totalPrice, clearCart } = useCart();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (cart.length === 0) {
@@ -46,18 +48,32 @@ export function Cart({ isMobile }: { isMobile?: boolean }) {
             </span>
           </div>
 
-          <button
-            onClick={() => setIsCheckoutOpen(true)}
-            disabled={cart.length === 0}
-            className="flex-1 h-14 bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-2xl font-black text-white text-lg transition-all shadow-lg shadow-green-500/20"
-          >
-            {isExpanded ? 'CONFIRMAR' : `FINALIZAR (${totalItems})`}
-          </button>
+          <div className="flex flex-1 gap-2">
+            <button
+              onClick={() => setIsTableModalOpen(true)}
+              disabled={cart.length === 0}
+              className="flex-1 h-14 bg-slate-700 hover:bg-slate-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-2xl font-bold text-slate-300 text-sm transition-all"
+            >
+              Lançar na Mesa
+            </button>
+
+            <button
+              onClick={() => setIsCheckoutOpen(true)}
+              disabled={cart.length === 0}
+              className="flex-[2] h-14 bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-2xl font-black text-white text-lg transition-all shadow-lg shadow-green-500/20"
+            >
+              {isExpanded ? 'COBRAR' : `COBRAR (${totalItems})`}
+            </button>
+          </div>
         </div>
 
         <CheckoutModal
           isOpen={isCheckoutOpen}
           onClose={() => setIsCheckoutOpen(false)}
+        />
+        <TableModal
+          isOpen={isTableModalOpen}
+          onClose={() => setIsTableModalOpen(false)}
         />
       </div>
     );
@@ -103,18 +119,31 @@ export function Cart({ isMobile }: { isMobile?: boolean }) {
           </span>
         </div>
 
-        <button
-          onClick={() => setIsCheckoutOpen(true)}
-          disabled={cart.length === 0}
-          className="w-full h-20 bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-3xl font-black text-2xl text-white transition-all shadow-xl shadow-green-500/20"
-        >
-          FINALIZAR
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => setIsTableModalOpen(true)}
+            disabled={cart.length === 0}
+            className="w-1/3 h-20 bg-slate-700 hover:bg-slate-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-3xl font-bold text-xl text-slate-300 transition-all"
+          >
+            Mesa
+          </button>
+          <button
+            onClick={() => setIsCheckoutOpen(true)}
+            disabled={cart.length === 0}
+            className="w-2/3 h-20 bg-green-500 hover:bg-green-600 active:scale-95 disabled:bg-slate-800 disabled:text-slate-600 rounded-3xl font-black text-2xl text-white transition-all shadow-xl shadow-green-500/20"
+          >
+            COBRAR
+          </button>
+        </div>
       </div>
 
       <CheckoutModal
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
+      />
+      <TableModal
+        isOpen={isTableModalOpen}
+        onClose={() => setIsTableModalOpen(false)}
       />
     </div>
   );
