@@ -1,7 +1,7 @@
 import prisma from '@/lib/prisma';
 import MesasClient from './MesasClient';
 
-export const revalidate = 0; // Disable static rendering for this page
+export const dynamic = 'force-dynamic';
 
 export default async function MesasPage() {
   const mesas = await prisma.order.findMany({

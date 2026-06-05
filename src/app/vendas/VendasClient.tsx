@@ -5,7 +5,7 @@ import { Cart } from '@/components/Cart';
 import { CategoryTabs } from '@/components/CategoryTabs';
 import { useState } from 'react';
 import { Product } from '@prisma/client';
-import { LogOut, Settings } from 'lucide-react';
+import { LogOut, Settings, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function VendasClient({ initialProducts }: { initialProducts: Product[] }) {
@@ -25,6 +25,14 @@ export default function VendasClient({ initialProducts }: { initialProducts: Pro
         <header className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-100">Barraca do João</h1>
           <div className="flex gap-2">
+            <button 
+              onClick={() => router.push('/mesas')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-orange-600 active:bg-orange-700 rounded-xl text-slate-300 hover:text-white transition-all"
+              title="Mesas Abertas"
+            >
+              <ClipboardList size={18} />
+              <span className="hidden sm:inline">Mesas</span>
+            </button>
             <button 
               onClick={() => router.push('/admin')}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-blue-600 active:bg-blue-700 rounded-xl text-slate-300 hover:text-white transition-all"
