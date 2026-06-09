@@ -32,11 +32,11 @@ function formatCurrency(cents) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 }
 
-async function sendToWindowsPrinter(buffer) {
+async function sendToWindowsPrinter(buffer, targetPrinter) {
   return new Promise((resolve) => {
     const tempFile = path.join(__dirname, 'temp_print.bin');
     fs.writeFileSync(tempFile, buffer);
-    const command = `copy /b "${tempFile}" "\\\\localhost\\${printerInterface}"`;
+    const command = `copy /b "${tempFile}" "\\\\localhost\\${targetPrinter}"`;
     exec(command, (error, stdout, stderr) => {
       if (fs.existsSync(tempFile)) fs.unlinkSync(tempFile);
       if (error) {
@@ -100,7 +100,23 @@ async function printOrder(payload) {
       }
     }
 
-    return await sendToWindowsPrinter(printer.getBuffer());
+    // Salva uma cópia em texto para testes
+    const txtContent = printer.getText();
+    fs.writeFileSync(path.join(__dirname, '../CUPOM_ULTIMA_VENDA.txt'), txtContent);
+
+    // Lógica de Roteamento Inteligente
+    const defaultPrinter = process.env.PRINTER_INTERFACE || 'FestaPrinter';
+    let targetPrinter = defaultPrinter;
+    
+    if (payload.seller && payload.seller.toLowerCase().includes('caixa')) {
+      targetPrinter = process.env.PRINTER_CAIXA || defaultPrinter;
+      console.log(`[Roteamento] Venda do Caixa. Destino: ${targetPrinter}`);
+    } else {
+      targetPrinter = process.env.PRINTER_GARCOM || defaultPrinter;
+      console.log(`[Roteamento] Venda de Garçom. Destino: ${targetPrinter}`);
+    }
+
+    return await sendToWindowsPrinter(printer.getBuffer(), targetPrinter);
   } catch (error) {
     console.error("Erro no processamento:", error);
     return false;
