@@ -1,6 +1,7 @@
 "use client"
 
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { ShoppingCart, Trash2, CreditCard } from 'lucide-react';
 import { CartItem } from './CartItem';
@@ -10,6 +11,7 @@ import { TableModal } from './TableModal';
 
 export function Cart({ isMobile }: { isMobile?: boolean }) {
   const { cart, totalItems, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isTableModalOpen, setIsTableModalOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -127,6 +129,7 @@ export function Cart({ isMobile }: { isMobile?: boolean }) {
           >
             Mesa
           </button>
+          
           <button
             onClick={() => setIsCheckoutOpen(true)}
             disabled={cart.length === 0}

@@ -6,6 +6,7 @@ import { closeTable } from '@/actions/order';
 import { X, Loader2, Users, Receipt } from 'lucide-react';
 import { PaymentMethod } from '@/types';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function MesasClient({ initialMesas }: { initialMesas: any[] }) {
   const [mesas, setMesas] = useState(initialMesas);
@@ -14,20 +15,51 @@ export default function MesasClient({ initialMesas }: { initialMesas: any[] }) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('DINHEIRO');
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { user } = useAuth();
 
   const handleCloseTable = () => {
     if (!selectedMesa) return;
 
     startTransition(async () => {
-      const res = await closeTable(selectedMesa.id, paymentMethod);
-      if (res.success) {
-        setMesas(prev => prev.filter(m => m.id !== selectedMesa.id));
-        setSelectedMesa(null);
-        router.refresh();
-      } else {
-        alert("Erro ao fechar mesa: " + res.error);
+      const payload = {
+        orderId: selectedMesa.id,
+        paymentMethod
+      };
+
+      try {
+        if (!navigator.onLine) {
+          throw new Error('OFFLINE_FALLBACK');
+        }
+
+        const res = await closeTable(payload.orderId, payload.paymentMethod);
+        if (res.success) {
+          handleSuccess();
+        } else {
+          alert("Erro ao fechar mesa: " + res.error);
+        }
+      } catch (error: any) {
+        if (error.message === 'OFFLINE_FALLBACK' || error.message.includes('fetch') || error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          const { db } = await import('@/lib/db');
+          await db.offlineActions.add({
+            actionType: 'CLOSE_TABLE',
+            payload,
+            status: 'PENDING',
+            createdAt: new Date(),
+            retries: 0
+          });
+          handleSuccess();
+        } else {
+          alert('Erro ao fechar mesa. Verifique a conexão com o banco.');
+          console.error(error);
+        }
       }
     });
+  };
+
+  const handleSuccess = () => {
+    setMesas(prev => prev.filter(m => m.id !== selectedMesa.id));
+    setSelectedMesa(null);
+    router.refresh();
   };
 
   return (
@@ -127,40 +159,51 @@ export default function MesasClient({ initialMesas }: { initialMesas: any[] }) {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="flex items-center gap-2 text-slate-400 text-sm font-bold">
-                  <Receipt size={16} /> Forma de Pagamento
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(['DINHEIRO', 'PIX', 'CARTAO'] as PaymentMethod[]).map(method => (
-                    <button
-                      key={method}
-                      onClick={() => setPaymentMethod(method)}
-                      className={`py-3 rounded-xl font-bold transition-colors text-sm ${
-                        paymentMethod === method
-                          ? 'bg-green-500 text-white'
-                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-                      }`}
-                    >
-                      {method}
-                    </button>
-                  ))}
+              {user?.role === 'ADMIN' && (
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2 text-slate-400 text-sm font-bold">
+                    <Receipt size={16} /> Forma de Pagamento
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['DINHEIRO', 'PIX', 'CARTAO'] as PaymentMethod[]).map(method => (
+                      <button
+                        key={method}
+                        onClick={() => setPaymentMethod(method)}
+                        className={`py-3 rounded-xl font-bold transition-colors text-sm ${
+                          paymentMethod === method
+                            ? 'bg-green-500 text-white'
+                            : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="p-6 border-t border-slate-800 shrink-0">
-              <button
-                onClick={handleCloseTable}
-                disabled={isPending}
-                className="w-full bg-green-500 hover:bg-green-600 active:scale-95 text-white font-black text-xl py-5 rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-green-500/20"
-              >
-                {isPending ? (
-                  <><Loader2 className="animate-spin" /> Fechando...</>
-                ) : (
-                  'Confirmar Pagamento e Imprimir'
-                )}
-              </button>
+              {user?.role === 'ADMIN' ? (
+                <button
+                  onClick={handleCloseTable}
+                  disabled={isPending}
+                  className="w-full bg-green-500 hover:bg-green-600 active:scale-95 text-white font-black text-xl py-5 rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center gap-2 shadow-xl shadow-green-500/20"
+                >
+                  {isPending ? (
+                    <><Loader2 className="animate-spin" /> Fechando...</>
+                  ) : (
+                    'Confirmar Pagamento e Imprimir'
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={() => setSelectedMesa(null)}
+                  className="w-full bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-lg py-4 rounded-2xl transition-all flex items-center justify-center gap-2"
+                >
+                  Fechar Visualização
+                </button>
+              )}
             </div>
           </div>
         </div>

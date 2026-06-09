@@ -8,8 +8,11 @@ import { Product } from '@prisma/client';
 import { LogOut, Settings, ClipboardList } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { useAuth } from '@/contexts/AuthContext';
+
 export default function VendasClient({ initialProducts }: { initialProducts: Product[] }) {
   const router = useRouter();
+  const { user } = useAuth();
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   const categories = Array.from(new Set(initialProducts.map(p => p.category)));
@@ -33,14 +36,16 @@ export default function VendasClient({ initialProducts }: { initialProducts: Pro
               <ClipboardList size={18} />
               <span className="hidden sm:inline">Mesas</span>
             </button>
-            <button 
-              onClick={() => router.push('/admin')}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-blue-600 active:bg-blue-700 rounded-xl text-slate-300 hover:text-white transition-all"
-              title="Gerenciar Produtos"
-            >
-              <Settings size={18} />
-              <span className="hidden sm:inline">Gerenciar</span>
-            </button>
+            {user?.role === 'ADMIN' && (
+              <button 
+                onClick={() => router.push('/admin')}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-blue-600 active:bg-blue-700 rounded-xl text-slate-300 hover:text-white transition-all"
+                title="Gerenciar Produtos"
+              >
+                <Settings size={18} />
+                <span className="hidden sm:inline">Gerenciar</span>
+              </button>
+            )}
             <button 
               onClick={() => router.push('/')}
               className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-red-600 active:bg-red-700 rounded-xl text-slate-300 hover:text-white transition-all"

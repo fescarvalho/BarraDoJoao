@@ -1,6 +1,7 @@
 "use client"
 
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { PaymentMethod } from '@/types';
 import { X, Loader2 } from 'lucide-react';
@@ -15,46 +16,67 @@ interface CheckoutModalProps {
 
 export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   const { cart, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
 
   if (!isOpen) return null;
 
+  const handleSuccess = () => {
+    setShowSuccess(true);
+    clearCart();
+    setTimeout(() => {
+      setShowSuccess(false);
+      onClose();
+    }, 2000);
+  };
+
   const handleCheckout = () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !user) return;
 
     startTransition(async () => {
+      const payload = {
+        items: cart.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitPrice: item.product.price
+        })),
+        type: 'AVULSO' as const,
+        paymentMethod: 'DINHEIRO' as const,
+        total: totalPrice,
+        sellerId: user.id 
+      };
+
       try {
-        const result = await createOrder({
-          items: cart.map(item => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-            unitPrice: item.product.price
-          })),
-          type: 'AVULSO',
-          paymentMethod: 'DINHEIRO',
-          total: totalPrice,
-          // TODO: Pegar sellerId real do contexto de auth
-          sellerId: 'cl_mock_seller_id' 
-        });
+        if (!navigator.onLine) {
+          throw new Error('OFFLINE_FALLBACK');
+        }
+
+        const result = await createOrder(payload);
 
         if (result.success) {
-          setShowSuccess(true);
-          clearCart();
-          setTimeout(() => {
-            setShowSuccess(false);
-            onClose();
-          }, 2000);
+          handleSuccess();
         } else {
           alert(`Erro ao finalizar venda: ${result.error}`);
         }
-      } catch (error) {
-        alert('Erro ao finalizar venda. Verifique a conexão com o banco.');
-        console.error(error);
+      } catch (error: any) {
+        if (error.message === 'OFFLINE_FALLBACK' || error.message.includes('fetch') || error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          const { db } = await import('@/lib/db');
+          await db.offlineActions.add({
+            actionType: 'CREATE_ORDER',
+            payload,
+            status: 'PENDING',
+            createdAt: new Date(),
+            retries: 0
+          });
+          handleSuccess();
+        } else {
+          alert('Erro ao finalizar venda. Verifique a conexão com o banco.');
+          console.error(error);
+        }
       }
     });
   };
-
 
   return (
     <>

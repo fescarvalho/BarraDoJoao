@@ -1,9 +1,0 @@
-@echo off
-set NODE_SKIP_PLATFORM_CHECK=1
-title Barraca do João - Preparando...
-echo Criando a versao ultra-rapida do sistema...
-echo Isso pode levar um ou dois minutos. Aguarde...
-npm run build
-echo.
-echo PRONTO! O sistema agora esta otimizado para a festa.
-pause

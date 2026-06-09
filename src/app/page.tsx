@@ -1,20 +1,28 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Store, KeyRound } from 'lucide-react';
+import { Store, KeyRound, CloudDownload } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const [pin, setPin] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { login, isSyncingAuth } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Validar PIN no backend
-    if (pin === '1234') { // Mock simples para continuar o fluxo
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (pin.length !== 4) return;
+    
+    setIsLoading(true);
+    const success = await login(pin);
+    setIsLoading(false);
+
+    if (success) {
       router.push('/vendas');
     } else {
-      alert('PIN incorreto!');
+      alert('PIN incorreto ou não encontrado no banco de dados do celular!');
       setPin('');
     }
   };
@@ -23,18 +31,15 @@ export default function LoginPage() {
     if (pin.length < 4) {
       const newPin = pin + num;
       setPin(newPin);
-      if (newPin.length === 4) {
-        // Auto-login ao chegar em 4 digitos
-        if (newPin === '1234') {
-          console.log("PIN correto, redirecionando...");
-          router.push('/vendas');
-        } else {
-          alert('PIN incorreto!');
-          setPin('');
-        }
-      }
     }
   };
+
+  // Usamos useEffect para auto-login ao digitar o 4º dígito
+  useEffect(() => {
+    if (pin.length === 4 && !isLoading) {
+      handleLogin();
+    }
+  }, [pin]);
 
   const handleDelete = () => {
     setPin(prev => prev.slice(0, -1));

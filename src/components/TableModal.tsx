@@ -1,6 +1,7 @@
 "use client"
 
 import { useCart } from '@/contexts/CartContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { formatCurrency } from '@/lib/utils';
 import { X, Loader2 } from 'lucide-react';
 import { useState, useTransition } from 'react';
@@ -14,48 +15,69 @@ interface TableModalProps {
 
 export function TableModal({ isOpen, onClose }: TableModalProps) {
   const { cart, totalPrice, clearCart } = useCart();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [showSuccess, setShowSuccess] = useState(false);
   const [tableNumber, setTableNumber] = useState('');
 
   if (!isOpen) return null;
 
+  const handleSuccess = () => {
+    setShowSuccess(true);
+    clearCart();
+    setTimeout(() => {
+      setShowSuccess(false);
+      setTableNumber('');
+      onClose();
+    }, 2000);
+  };
+
   const handleLaunchTable = () => {
-    if (cart.length === 0 || !tableNumber) return;
+    if (cart.length === 0 || !tableNumber || !user) return;
 
     startTransition(async () => {
+      const payload = {
+        items: cart.map(item => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+          unitPrice: item.product.price
+        })),
+        type: 'MESA' as const,
+        tableNumber: parseInt(tableNumber),
+        total: totalPrice,
+        sellerId: user.id 
+      };
+
       try {
-        const result = await createOrder({
-          items: cart.map(item => ({
-            productId: item.product.id,
-            quantity: item.quantity,
-            unitPrice: item.product.price
-          })),
-          type: 'MESA',
-          tableNumber: parseInt(tableNumber),
-          total: totalPrice,
-          // TODO: Pegar sellerId real do contexto de auth
-          sellerId: 'cl_mock_seller_id' 
-        });
+        if (!navigator.onLine) {
+          throw new Error('OFFLINE_FALLBACK');
+        }
+
+        const result = await createOrder(payload);
 
         if (result.success) {
-          setShowSuccess(true);
-          clearCart();
-          setTimeout(() => {
-            setShowSuccess(false);
-            setTableNumber('');
-            onClose();
-          }, 2000);
+          handleSuccess();
         } else {
           alert(`Erro ao lançar na mesa: ${result.error}`);
         }
-      } catch (error) {
-        alert('Erro ao lançar na mesa. Verifique a conexão com o banco.');
-        console.error(error);
+      } catch (error: any) {
+        if (error.message === 'OFFLINE_FALLBACK' || error.message.includes('fetch') || error.message.includes('Network') || error.message.includes('Failed to fetch')) {
+          const { db } = await import('@/lib/db');
+          await db.offlineActions.add({
+            actionType: 'CREATE_ORDER',
+            payload,
+            status: 'PENDING',
+            createdAt: new Date(),
+            retries: 0
+          });
+          handleSuccess();
+        } else {
+          alert('Erro ao lançar na mesa. Verifique a conexão com o banco.');
+          console.error(error);
+        }
       }
     });
   };
-
   return (
     <>
       <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center animate-in fade-in duration-200">
