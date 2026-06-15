@@ -26,7 +26,14 @@ export default function VendasClient({ initialProducts }: { initialProducts: Pro
       {/* Area de Produtos */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         <header className="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-slate-100">Barraca do João</h1>
+          <div className="flex flex-col">
+            <h1 className="text-xl font-bold text-slate-100">Barraca do João</h1>
+            {user && (
+              <span className="text-sm text-slate-400 font-medium mt-0.5">
+                Atendente: <span className="text-slate-300 font-bold">{user.name}</span>
+              </span>
+            )}
+          </div>
           <div className="flex gap-2">
             <button 
               onClick={() => router.push('/mesas')}

@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react';
 import { formatCurrency } from '@/lib/utils';
 import { closeTable } from '@/actions/order';
-import { X, Loader2, Users, Receipt } from 'lucide-react';
+import { X, Loader2, Users, Receipt, Home } from 'lucide-react';
 import { PaymentMethod } from '@/types';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +64,16 @@ export default function MesasClient({ initialMesas }: { initialMesas: any[] }) {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 p-6">
-      <h1 className="text-3xl font-black mb-8">Gestão de Mesas</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-black">Gestão de Mesas</h1>
+        <button 
+          onClick={() => router.push('/')}
+          className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl transition-colors flex items-center gap-2 font-bold"
+        >
+          <Home size={20} />
+          Início
+        </button>
+      </div>
       
       {mesas.length === 0 ? (
         <div className="text-center p-12 bg-slate-900 rounded-3xl border border-slate-800">

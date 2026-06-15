@@ -17,6 +17,14 @@ export function Cart({ isMobile }: { isMobile?: boolean }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (cart.length === 0) {
+    if (isMobile) {
+      return (
+        <div className="flex items-center justify-center p-3 text-slate-500 bg-slate-800/30 rounded-2xl border border-slate-800">
+          <ShoppingCart size={20} className="mr-2 opacity-40" />
+          <p className="text-sm font-bold">Carrinho vazio</p>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-slate-500 border-l border-slate-800 bg-slate-900/50">
         <ShoppingCart size={48} className="mb-4 opacity-20" />
