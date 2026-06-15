@@ -20,28 +20,37 @@ async function main() {
     },
   })
 
-  console.log({ user })
-
-  // Limpar produtos antigos para evitar duplicatas no seed
-  await prisma.product.deleteMany({})
+  // (Os produtos antigos já vendidos não podem ser apagados por causa do histórico de vendas)
 
   // Criar Produtos
-  const products = [
-    { name: 'X-Salada', price: 1500, category: 'Lanches' },
-    { name: 'X-Tudo', price: 2000, category: 'Lanches' },
-    { name: 'Coca-Cola Lata', price: 600, category: 'Bebidas' },
-    { name: 'Guaraná Lata', price: 500, category: 'Bebidas' },
-    { name: 'Água', price: 300, category: 'Bebidas' },
-    { name: 'Bolo no Pote', price: 800, category: 'Doces' },
-    { name: 'Brigadeiro', price: 300, category: 'Doces' },
-    { name: 'Fatia de Pizza', price: 1200, category: 'Pizzas' },
-  ]
-
-  for (const p of products) {
-    await prisma.product.create({
-      data: p,
-    })
-  }
+  await prisma.product.createMany({
+    data: [
+      // PORÇÕES BATATA
+      { name: 'BATATA 500GR - QUEIJO, BACON E CALABRESA', price: 5500, category: 'PORÇÕES BATATA' },
+      { name: 'BATATA 250GR COM BACON - QUEIJO - CALABRESA', price: 3000, category: 'PORÇÕES BATATA' },
+      { name: 'BATATA 500GR - SIMPLES', price: 4500, category: 'PORÇÕES BATATA' },
+      { name: 'BATATA 250GR - SIMPLES', price: 2500, category: 'PORÇÕES BATATA' },
+      
+      // SALSICHÃO
+      { name: 'SALSICHÃO', price: 1000, category: 'SALSICHÃO' },
+      
+      // PORÇÕES DE CARNE
+      { name: 'PORÇÃO CARNE PICANHA 350GR', price: 6500, category: 'PORÇÕES DE CARNE' },
+      { name: 'PORÇÃO PICANHA 350GR + BATATA 250GR', price: 8500, category: 'PORÇÕES DE CARNE' },
+      { name: 'PORÇÃO CARNE DE SOL 350GR', price: 6500, category: 'PORÇÕES DE CARNE' },
+      { name: 'PORÇÃO CARNE DE SOL 350GR + AIPIM FRITO', price: 8500, category: 'PORÇÕES DE CARNE' },
+      
+      // CHAPA MISTA
+      { name: 'CHAPA MISTA COMPLETA', price: 15000, category: 'CHAPA MISTA' },
+      
+      // CHOPP IPA
+      { name: 'CHOPP RED IPA 300 ML', price: 1500, category: 'CHOPP IPA' },
+      { name: 'COMBO 3x CHOPP RED IPA 300 ML', price: 4000, category: 'CHOPP IPA' },
+      { name: 'CHOPP RED IPA 500 ML', price: 2000, category: 'CHOPP IPA' },
+      { name: 'COMBO 3x CHOPP RED IPA 500 ML', price: 5500, category: 'CHOPP IPA' }
+    ],
+    skipDuplicates: true
+  })
 
   console.log('Seed finalizado com sucesso!')
 }

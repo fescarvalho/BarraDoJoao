@@ -1,6 +1,7 @@
 require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 require('dotenv').config(); // Carrega também o local se existir
 const { createClient } = require('@supabase/supabase-js');
+const ws = require('ws');
 const ThermalPrinter = require("node-thermal-printer").printer;
 const PrinterTypes = require("node-thermal-printer").types;
 const { exec } = require('child_process');
@@ -18,7 +19,14 @@ if (!supabaseUrl || !supabaseKey) {
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    persistSession: false
+  },
+  realtime: {
+    transport: ws
+  }
+});
 
 let printer = new ThermalPrinter({
   type: PrinterTypes.EPSON,
@@ -53,9 +61,8 @@ async function printOrder(payload) {
   try {
     printer.clear();
     printer.alignCenter();
-    printer.bold(true);
-    printer.println("BARRACA DO JOAO");
-    printer.bold(false);
+    await printer.printImage('./JOAO.png');
+    printer.newLine();
     printer.println("Barraca do João - Comanda de Venda");
     printer.drawLine();
     printer.alignLeft();
@@ -66,21 +73,21 @@ async function printOrder(payload) {
       printer.println(`Mesa: ${payload.tableNumber}`);
     }
     printer.drawLine();
-    
+
     for (const item of payload.items) {
       const qtd = String(item.quantity).padEnd(4, ' ');
       const nome = item.name.substring(0, 20).padEnd(21, ' ');
       const total = formatCurrency(item.totalPrice).padStart(9, ' ');
       printer.println(`${qtd} ${nome} ${total}`);
     }
-    
+
     printer.drawLine();
     printer.alignRight();
     printer.bold(true);
     printer.println(`TOTAL: ${formatCurrency(payload.total)}`);
     printer.bold(false);
     printer.cut();
-    
+
     for (const item of payload.items) {
       for (let i = 0; i < item.quantity; i++) {
         printer.alignCenter();
@@ -107,7 +114,7 @@ async function printOrder(payload) {
     // Lógica de Roteamento Inteligente
     const defaultPrinter = process.env.PRINTER_INTERFACE || 'FestaPrinter';
     let targetPrinter = defaultPrinter;
-    
+
     if (payload.seller && payload.seller.toLowerCase().includes('caixa')) {
       targetPrinter = process.env.PRINTER_CAIXA || defaultPrinter;
       console.log(`[Roteamento] Venda do Caixa. Destino: ${targetPrinter}`);
@@ -167,14 +174,14 @@ async function startRealtimeListener() {
   }
 
   console.log('✅ Impressora Cloud Pronta! Aguardando novos pedidos...');
-  
+
   supabase
     .channel('print_queue_changes')
-    .on('postgres_changes', { 
-      event: 'INSERT', 
-      schema: 'public', 
+    .on('postgres_changes', {
+      event: 'INSERT',
+      schema: 'public',
       table: 'print_queue',
-      filter: "status=eq.PENDING" 
+      filter: "status=eq.PENDING"
     }, (payload) => {
       console.log('Novo pedido recebido via Realtime!', payload.new.id);
       processJob(payload.new);

@@ -12,6 +12,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.105.4",
     "dotenv": "^17.4.2",
-    "node-thermal-printer": "^4.6.0"
+    "node-thermal-printer": "^4.6.0",
+    "ws": "^8.21.0"
   }
 }
