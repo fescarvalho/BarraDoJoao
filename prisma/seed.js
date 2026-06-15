@@ -47,7 +47,20 @@ async function main() {
       { name: 'CHOPP RED IPA 300 ML', price: 1500, category: 'CHOPP IPA' },
       { name: 'COMBO 3x CHOPP RED IPA 300 ML', price: 4000, category: 'CHOPP IPA' },
       { name: 'CHOPP RED IPA 500 ML', price: 2000, category: 'CHOPP IPA' },
-      { name: 'COMBO 3x CHOPP RED IPA 500 ML', price: 5500, category: 'CHOPP IPA' }
+      { name: 'COMBO 3x CHOPP RED IPA 500 ML', price: 5500, category: 'CHOPP IPA' },
+      
+      // CHOPP DE VINHO
+      { name: 'CHOPP DE VINHO 300 ML', price: 1500, category: 'CHOPP DE VINHO' },
+      { name: 'COMBO 3x CHOPP DE VINHO 300 ML', price: 4000, category: 'CHOPP DE VINHO' },
+      { name: 'CHOPP DE VINHO 500 ML', price: 2000, category: 'CHOPP DE VINHO' },
+      { name: 'COMBO 3x CHOPP DE VINHO 500 ML', price: 5000, category: 'CHOPP DE VINHO' },
+      
+      // CHOPP PILSEN
+      { name: 'CHOPP PILSEN 500 ML', price: 1500, category: 'CHOPP PILSEN' },
+      { name: 'COMBO 3x CHOPP PILSEN 500 ML', price: 4000, category: 'CHOPP PILSEN' },
+
+      // BEATS
+      { name: 'BEATS', price: 1500, category: 'BEATS' }
     ],
     skipDuplicates: true
   })
